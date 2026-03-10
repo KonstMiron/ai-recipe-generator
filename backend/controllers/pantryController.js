@@ -6,7 +6,7 @@ export const getPantryItems = async (req, res, next) => {
     try {
         const { category, is_running_low, search } = req.query;
 
-        const items = await PantryItem.findByUserId(req.user.id, { 
+        const items = await PantryItem.findAllByUserId(req.user.id, { 
             category, 
             is_running_low: is_running_low === 'true' ? true : undefined, 
             search 
@@ -53,7 +53,7 @@ export const getExpiringSoon = async (req, res, next) => {
 // Add new pantry item
 export const addPantryItem = async (req, res, next) => {
     try {
-        const item = await PantryItem.create(req.user.id, req.body);
+        const item = await PantryItem.create({ userId: req.user.id, itemData: req.body });
         
         res.status(201).json({
             success: true,

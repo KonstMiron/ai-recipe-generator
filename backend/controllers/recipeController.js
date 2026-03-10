@@ -1,5 +1,5 @@
 import Recipe from '../models/Recipe.js';
-import PantryItem from '../models/PantryItem';
+import PantryItem from '../models/PantryItem.js';
 import { generateRecipe as generateRecipeAI, generatePantrySuggestions as  generatePantrySuggestionsAI} from '../utils/gemini.js';
 
 // Generate recipe using AI
@@ -70,7 +70,7 @@ export const getPantrySuggestions = async (req, res, next) => {
 // Save recipe
 export const saveRecipe = async (req, res, next) => {
     try {
-        const recipe = await Recipe.create(req.user.id, req.body);
+        const recipe = await Recipe.create({ userId: req.user.id, recipeData: req.body });
         
         res.status(201).json({
             success: true,

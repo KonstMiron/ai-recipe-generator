@@ -78,3 +78,76 @@ Make sure recipe is creative, delicious, and uses the provided ingredients effec
         throw new Error('Failed to generate recipe. Please try again.');
     }
 }; 
+
+export const generatePantrySuggestions = async (pantryItems, expiringItems =[]) => {
+
+    const ingredients = pantryItems.map(item => item.name).join(', ');
+    const expiringText = expiringItems.length > 0 
+        ? `\nPriority ingredients (expiring soon): ${expiringItems.join(', ')}`
+        : '';
+
+        const prompt = `Based on these available ingredients: ${ingredients}${expiringText}
+        
+        Suggest 3 creative recipe ideas that use these ingredients. Return ONLY a JSON array of strings (no markdown);
+        ["Recipe idea 1", "Recipe idea 2", "Recipe idea 3"]
+        
+        Each suggestion should be a brief, appetizing description (1-2 sentences).`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+        });
+
+        let generatedText = response.text.trim();
+
+        // Remove markdown code blocks if present
+        if (generatedText.startsWith('```json')) {
+            generatedText = generatedText.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
+        } else if (generatedText.startsWith('```')) {
+            generatedText = generatedText.replace(/```\n?/g, '');
+        }
+
+        const suggestions = JSON.parse(generatedText);
+        return suggestions;
+    } catch (error) {
+        console.error('Error generating pantry suggestions:', error);
+        throw new Error('Failed to generate pantry suggestions. Please try again.');
+    }
+};
+
+export const generateCookingTips = async (recipe) => {
+
+    const prompt = `For this recipe: "${recipe.name}"
+Ingredients: ${recipe.ingredients?.map(i => i.name).join(', ') || 'N/A'}
+
+Provide 3-5 helpful cooking tips to make this recipe better. Return ONLY a JSON array of strings (no markdown):
+["Tip 1", "Tip 2", "Tip 3"]`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+        });
+
+        let generatedText = response.text.trim();
+
+        if (generatedText.startsWith('```json')) {
+            generatedText = generatedText.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
+        } else if (generatedText.startsWith('```')) {
+            generatedText = generatedText.replace(/```\n?/g, '');
+        }
+
+        const tips = JSON.parse(generatedText);
+        return tips;
+    } catch (error) {
+        console.error('Error generating cooking tips:', error);
+        return ['Failed to generate cooking tips. Please try again.'];
+    }
+};
+
+export default {
+    generateRecipe,
+    generatePantrySuggestions,
+    generateCookingTips
+};
