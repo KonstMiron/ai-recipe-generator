@@ -176,9 +176,10 @@ const Pantry = () => {
             {showAddModal && (
                 <AddItemModal
                     onClose={() => setShowAddModal(false)}
-                    onSuccess={(newItem) => {
+                    onSuccess={() => {
                         fetchPantryItems();
                         fetchExpiringItems();
+                        setShowAddModal(false);
                     }}
                 />
             )}
@@ -269,7 +270,8 @@ const AddItemModal = ({ onClose, onSuccess }) => {
             onSuccess();
             onClose();
         } catch (error) {
-            toast.error('Failed to add item');
+            console.error('Error adding item to pantry:', error);
+            toast.error(error.response?.data?.message || 'Failed to add item');
         } finally {
             setLoading(false);
         }

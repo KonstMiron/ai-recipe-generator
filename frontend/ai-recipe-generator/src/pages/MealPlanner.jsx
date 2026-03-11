@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Plus, X, ChefHat } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
-import { format, startOfWeek, addDays } from 'date-fns';
-import { dummyMealPlans, dummyRecipes } from '../data/dummyData';
+import { format, startOfWeek, addDays, set } from 'date-fns';
+import api from '../services/api.js';
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -14,23 +14,45 @@ const MealPlanner = () => {
     const [recipes, setRecipes] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadMealPlan();
-        setRecipes(dummyRecipes);
+        fetchMealPlan();
+        fetchRecipes();
     }, [weekStart]);
 
-    const loadMealPlan = () => {
-        // Organize dummy meals by date and meal type
-        const organized = {};
-        dummyMealPlans.forEach(meal => {
-            const dateKey = meal.meal_date;
-            if (!organized[dateKey]) {
-                organized[dateKey] = {};
-            }
-            organized[dateKey][meal.meal_type] = meal;
-        });
-        setMealPlan(organized);
+    const fetchMealPlan = async () => {
+        try {
+            const startDate = format(weekStart, 'yyyy-MM-dd');
+            const endDate = format(addDays(weekStart, 6), 'yyyy-MM-dd');
+
+            const response = await api.get(`/meal-plans/weekly?start_date=${startDate}`);
+            const meals = response.data.data.mealPlan;
+
+            // Orgainze meals by date and type
+            const organized = {};
+            meals.forEach(meal => {
+                const dateKey = meal.meal_date;
+                if (!organized[dateKey]) {
+                    organized[dateKey] = {};
+                }
+                organized[dateKey][meal.meal_type] = meal;
+            });
+            setMealPlan(organized);
+        } catch (error) {
+            toast.error('Failed to load meal plan');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchRecipes = async () => {
+        try {
+            const response = await api.get('/recipes');
+            setRecipes(response.data.data.recipes);
+        } catch (error) {
+            toast.error('Failed to load recipes');
+        }
     };
 
     const handleAddMeal = (date, mealType) => {
@@ -38,20 +60,16 @@ const MealPlanner = () => {
         setShowAddModal(true);
     };
 
-    const handleRemoveMeal = (mealId) => {
+    const handleRemoveMeal = async (mealId) => {
         if (!confirm('Remove this meal from your plan?')) return;
 
-        // UI-only remove
-        const updatedPlan = { ...mealPlan };
-        Object.keys(updatedPlan).forEach(date => {
-            Object.keys(updatedPlan[date]).forEach(type => {
-                if (updatedPlan[date][type].id === mealId) {
-                    delete updatedPlan[date][type];
-                }
-            });
-        });
-        setMealPlan(updatedPlan);
-        toast.success('Meal removed');
+        try {
+            await api.delete(`/meal-plans/${mealId}`);
+            await fetchMealPlan();
+            toast.success('Meal removed from plan');
+        } catch (error) {
+            toast.error('Failed to remove meal');
+        }
     };
 
     const getDayMeals = (dayIndex) => {
@@ -135,7 +153,7 @@ const MealPlanner = () => {
                                 return (
                                     <div
                                         key={dayIndex}
-                                        className="p-3 border-r border-gray-200 last:border-r-0 min-h-[100px] hover:bg-gray-50 transition-colors"
+                                        className="p-3 border-r border-gray-200 last:border-r-0 min-h-100px hover:bg-gray-50 transition-colors"
                                     >
                                         {meal ? (
                                             <div className="relative group">
@@ -224,26 +242,28 @@ const AddMealModal = ({ date, mealType, recipes, onClose, onSuccess }) => {
         recipe.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async(e) => {
         e.preventDefault();
         if (!selectedRecipe) {
             toast.error('Please select a recipe');
             return;
         }
 
-        // UI-only add
-        const recipe = recipes.find(r => r.id == selectedRecipe);
-        const newMeal = {
-            id: Date.now(),
-            recipe_id: selectedRecipe,
-            recipe_name: recipe.name,
-            meal_date: date,
-            meal_type: mealType,
-            created_at: new Date().toISOString()
-        };
+        setLoading(true);
 
-        toast.success('Meal added to plan');
-        onSuccess(newMeal);
+        try {
+            await api.post('/meal-plans', {
+                recipe_id: selectedRecipe,
+                meal_date: date,
+                meal_type: mealType
+            });
+            toast.success('Meal added to plan');
+            onSuccess();
+        } catch (error) {
+            toast.error('Failed to add meal');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

@@ -23,9 +23,9 @@ const Dashboard = () => {
             const [recipesRes, pantryRes, mealPlanRes, recentRes, upcomingRes] = await Promise.all([
                 api.get('/recipes/stats'),
                 api.get('/pantry/stats'),
-                api.get('/meal-plan/stats'),
+                api.get('/meal-plans/stats'),
                 api.get('/recipes/recent?limit=5'),
-                api.get('/meal-plan/upcoming?limit=5')
+                api.get('/meal-plans/upcoming?limit=5')
             ]);
 
             setStats({

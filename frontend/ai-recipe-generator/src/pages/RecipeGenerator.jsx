@@ -30,7 +30,7 @@ const RecipeGenerator = () => {
     useEffect(() => {
         const fetchPreferences = async () => {
             try {
-                const response = await api.get('/user/profile');
+                const response = await api.get('/users/profile');
                 const preferences = response.data.data.preferences;
 
                 if (preferences) {

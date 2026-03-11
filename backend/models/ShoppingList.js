@@ -97,15 +97,16 @@ class ShoppingList {
   // Get shopping list grouped by category
   static async getGroupedByCategory(userId) {
     const result = await db.query(
-      `SELECT category, json_agg
-      (json_build_object
-      ('id', id, 
-      'ingredient_name', ingredient_name, 
-      'quantity', quantity, 
-      'unit', unit,
-      'is_checked', is_checked,
-      'from_meal_plan', from_meal_plan
-      )
+      `SELECT category, 
+      json_agg(
+        json_build_object(
+          'id', id, 
+          'ingredient_name', ingredient_name, 
+          'quantity', quantity, 
+          'unit', unit,
+          'is_checked', is_checked,
+          'from_meal_plan', from_meal_plan
+        )
       ) as items
        FROM shopping_list_items
        WHERE user_id = $1
@@ -198,7 +199,7 @@ class ShoppingList {
       );
 
       // Add to pantry
-      for ( const item of checkedItems.rows ) {
+      for ( const item of result.rows ) {
         await client.query(
           `INSERT INTO pantry_items (user_id, name, quantity, unit, category) 
            VALUES ($1, $2, $3, $4, $5)`,
@@ -215,7 +216,7 @@ class ShoppingList {
 
       await client.query('COMMIT');
       
-      return checkedItems.rows;
+      return result.rows;
     } catch (error){
         await client.query('ROLLBACK');
         throw error;
