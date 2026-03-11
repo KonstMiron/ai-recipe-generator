@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
-import { GoogleGenAI} from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 dotenv.config();
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 if (!process.env.GEMINI_API_KEY) {
   console.warn('Warning: GEMINI_API_KEY is not set. Gemini API calls will fail.');
@@ -56,15 +56,13 @@ export const generateRecipe = async ({ ingredients, dietaryPreferences = [], cui
 Make sure recipe is creative, delicious, and uses the provided ingredients effectively.`;
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-        });
-
-        const generatedText = response.text.trim();
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const generatedText = response.text().trim();
 
         // Remove markdown code blocks if present
-        const jsonText = generatedText;
+        let jsonText = generatedText;
         if (jsonText.startsWith('```json')) {
             jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
         } else if (jsonText.startsWith('```')) {
@@ -94,12 +92,10 @@ export const generatePantrySuggestions = async (pantryItems, expiringItems =[]) 
         Each suggestion should be a brief, appetizing description (1-2 sentences).`;
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-        });
-
-        let generatedText = response.text.trim();
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        let generatedText = response.text().trim();
 
         // Remove markdown code blocks if present
         if (generatedText.startsWith('```json')) {
@@ -125,12 +121,10 @@ Provide 3-5 helpful cooking tips to make this recipe better. Return ONLY a JSON 
 ["Tip 1", "Tip 2", "Tip 3"]`;
 
     try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-        });
-
-        let generatedText = response.text.trim();
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        let generatedText = response.text().trim();
 
         if (generatedText.startsWith('```json')) {
             generatedText = generatedText.replace(/```json\n?/g, '').replace(/```\n?$/g, '');

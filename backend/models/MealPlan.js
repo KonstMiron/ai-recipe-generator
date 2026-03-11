@@ -7,7 +7,7 @@ class MealPlan {
         const date = planned_date || meal_date;
 
         const result = await db.query(
-            `INSERT INTO meal_plans (user_id, recipe_id, planned_date, meal_type)
+            `INSERT INTO meal_plans (user_id, recipe_id, meal_date, meal_type)
             VALUES ($1, $2, $3::date, $4)
             ON CONFLICT (user_id, meal_date, meal_type) 
             DO UPDATE SET recipe_id = $2
@@ -80,12 +80,17 @@ class MealPlan {
         const result = await db.query(
             `SELECT
                 COUNT(*) as total_planned_meals,
-                COUNT(*) FILTER (WHERE meal date >= CURRENT_DATE AND meal_date < CURRENT_DATE + INTERVAL '7 days') as this_week_count
+                COUNT(*) FILTER (WHERE meal_date >= CURRENT_DATE AND meal_date < CURRENT_DATE + INTERVAL '7 days') as this_week_count
                 FROM meal_plans
                 WHERE user_id = $1`,
             [userId]
         );
         return result.rows[0];
+    }
+
+    // Alias for controller compatibility
+    static async getUpcomingMeals(userId, limit) {
+        return this.getUpcomingPlan(userId, limit);
     }
 }
 

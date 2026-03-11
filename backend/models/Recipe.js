@@ -224,12 +224,21 @@ class Recipe{
             `SELECT
                 COUNT(*) as total_recipes,
                 COUNT(DISTINCT cuisine_type) as cuisine_types_count,
-                AVG(cook_time) as avg_cook_time,
+                AVG(cook_time) as avg_cook_time
                 FROM recipes
                 WHERE user_id = $1`,
             [userId]
         );
         return result.rows[0];
+    }
+
+    // Aliases for controller compatibility
+    static async findRecentByUserId(userId, limit) {
+        return this.getRecent(userId, limit);
+    }
+
+    static async getStatsByUserId(userId) {
+        return this.getStats(userId);
     }
 }
 

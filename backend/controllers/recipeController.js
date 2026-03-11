@@ -42,7 +42,7 @@ export const generateRecipe = async (req, res, next) => {
         res.json({
             success: true,
             message: 'Recipe generated successfully',
-            data: { recipe }
+            data: { recipe: recipeData }
         });
     } catch (error) {
         next(error);

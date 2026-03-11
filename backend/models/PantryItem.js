@@ -90,7 +90,7 @@ class PantryItem {
     // Delete a pantry item
     static async delete(id, userId) {
         const result = await db.query(
-            'DELETE FROM pantry_items WHERE id = $1 AND user_id = $2',
+            'DELETE FROM pantry_items WHERE id = $1 AND user_id = $2 RETURNING *',
             [id, userId]
         );
 
@@ -110,6 +110,11 @@ class PantryItem {
             [userId]
         );
         return result.rows[0];
+    }
+
+    // Alias for controller compatibility
+    static async findByUserId(userId) {
+        return this.findAllByUserId(userId);
     }
 }
 

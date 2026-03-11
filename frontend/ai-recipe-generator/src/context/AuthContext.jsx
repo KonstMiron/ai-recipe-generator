@@ -13,10 +13,10 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Cheack if user is logged in
+        // Check if user is logged in
         const token = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
 
